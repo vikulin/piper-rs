@@ -53,7 +53,11 @@ static ESPEAKNG_INIT: Lazy<ESpeakResult<()>> = Lazy::new(|| {
         }
     };
     let es_data_path_ptr = if espeak_data_location.join(ESPEAKNG_DATA_DIR_NAME).exists() {
-        rust_string_to_c(espeak_data_location.display().to_string())
+        // Convert path to string preserving OS-specific separators
+        // On Windows: C:\path\to\data -> "C:\path\to\data"
+        // On Unix: /path/to/data -> "/path/to/data"
+        let path_str = espeak_data_location.to_string_lossy().to_string();
+        rust_string_to_c(path_str)
     } else {
         std::ptr::null()
     };
@@ -116,18 +120,27 @@ pub fn _text_to_phonemes(
         Some(c) => ((c as u32) << 8u32) | espeak_rs_sys::espeakINITIALIZE_PHONEME_IPA,
         None => espeak_rs_sys::espeakINITIALIZE_PHONEME_IPA,
     };
-    let phoneme_mode: i32 = calculated_phoneme_mode.try_into().unwrap();
+    let phoneme_mode: i32 = calculated_phoneme_mode
+        .try_into()
+        .map_err(|_| ESpeakError("Invalid phoneme mode".to_string()))?;
     let mut sent_phonemes = Vec::new();
     let mut phonemes = String::new();
-    let mut text_c_char = rust_string_to_c(text) as *const ffi::c_char;
-    let text_c_char_ptr = std::ptr::addr_of_mut!(text_c_char);
-    let terminator: ffi::c_int = 0;
-    while !text_c_char.is_null() {
+    let text_c_string = rust_string_to_c(text);
+    let mut text_ptr = text_c_string as *const ffi::c_char;
+    let text_ptr_ptr = std::ptr::addr_of_mut!(text_ptr);
+    let mut terminator: ffi::c_int = 0;
+
+    let text_mode = espeak_rs_sys::espeakCHARS_UTF8
+        .try_into()
+        .map_err(|_| ESpeakError("Invalid character encoding".to_string()))?;
+
+    while !text_ptr.is_null() {
         let ph_str = unsafe {
-            let res = espeak_rs_sys::espeak_TextToPhonemes(
-                text_c_char_ptr as _,
-                espeak_rs_sys::espeakCHARS_UTF8.try_into().unwrap(),
+            let res = espeak_rs_sys::espeak_TextToPhonemesWithTerminator(
+                text_ptr_ptr as _,
+                text_mode,
                 phoneme_mode,
+                std::ptr::addr_of_mut!(terminator),
             );
             FfiStr::from_raw(res)
         };
