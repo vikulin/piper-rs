@@ -1,6 +1,6 @@
 [package]
 name = "espeak-rs-sys"
-version = "0.1.10"
+version = "0.1.11"
 edition = "2021"
 description = "Rust bindings to espeak-ng"
 license = "MIT"
