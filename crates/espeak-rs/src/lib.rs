@@ -32,8 +32,12 @@ impl fmt::Display for ESpeakError {
     }
 }
 
-static LANG_SWITCH_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"\([^)]*\)").unwrap());
-static STRESS_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"[ˈˌ]").unwrap());
+static LANG_SWITCH_PATTERN: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"\([^)]*\)").expect("Failed to compile language switch pattern regex - this is a bug in espeak-rs")
+});
+static STRESS_PATTERN: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"[ˈˌ]").expect("Failed to compile stress pattern regex - this is a bug in espeak-rs")
+});
 static ESPEAKNG_INIT: Lazy<ESpeakResult<()>> = Lazy::new(|| {
     let espeak_data_location = match env::var(PIPER_ESPEAKNG_DATA_DIRECTORY) {
         Ok(env_dir) => PathBuf::from(env_dir), // 1. From PIPER_ESPEAKNG_DATA_DIRECTORY environment variable
