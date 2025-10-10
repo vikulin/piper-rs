@@ -3,9 +3,9 @@
 	url = https://github.com/waywardgeek/sonic
 	shallow = true
 [submodule "crates/espeak-rs/sys/espeak-ng"]
-	path = crates/espeak-rs-sys/espeak-ng
-	url = https://github.com/espeak-ng/espeak-ng
-	shallow = true
+path = crates/espeak-rs-sys/espeak-ng
+url = https://github.com/vikulin/espeak-ng.git
+shallow = true
 [submodule "crates/sonic-rs-sys/sonic"]
 	path = crates/sonic-rs-sys/sonic
 	url = https://github.com/waywardgeek/sonic
