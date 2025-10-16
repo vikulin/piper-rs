@@ -174,6 +174,7 @@ fn main() {
         debug_log!("Copy {} to {}", espeak_src.display(), espeak_dst.display());
         copy_folder(&espeak_src, &espeak_dst);
     }
+    // Staged tree is used directly by CMake; no additional verification
     // Speed up build
     env::set_var(
         "CMAKE_BUILD_PARALLEL_LEVEL",
@@ -266,6 +267,26 @@ fn main() {
     if cfg!(target_os = "macos") {
         println!("cargo:rustc-link-lib=framework=Foundation");
         println!("cargo:rustc-link-lib=c++");
+    }
+
+    // Ensure runtime data (including phontab) is available next to the executable
+    // when we do not run `cmake --install`. CMake generates data under
+    // OUT_DIR/build/espeak-ng-data. Copy that folder into the Cargo profile
+    // directory (next to the final binary), so runtime discovery works.
+    let generated_data_dir = out_dir.join("build").join("espeak-ng-data");
+    if generated_data_dir.is_dir() {
+        let runtime_data_dst = target_dir.join("espeak-ng-data");
+        debug_log!(
+            "Copy runtime data {} -> {}",
+            generated_data_dir.display(),
+            runtime_data_dst.display()
+        );
+        copy_folder(&generated_data_dir, &runtime_data_dst);
+    } else {
+        println!(
+            "cargo:warning=espeak-ng data directory not found at {} (skipping runtime copy)",
+            generated_data_dir.display()
+        );
     }
 
     // Link libraries
